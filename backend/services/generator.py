@@ -29,7 +29,7 @@ STYLES = {
     ),
 }
 
-STYLE_order= ["bold_dramatic", "clean_minimal", "vibrant_energetic"]
+STYLE_ORDER= ["bold_dramatic", "clean_minimal", "vibrant_energetic"]
 
 async def generate_single_thumbnail(thumbnail_id:str, prompt:str, headshot_url: str):
     with Session(engine) as session:
