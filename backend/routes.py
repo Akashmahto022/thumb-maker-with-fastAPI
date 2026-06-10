@@ -39,15 +39,15 @@ class ThumbnailResponse(BaseModel):
     variants: dict | None = None
 
 class JobResponse(BaseModel):
-    id: int
+    id: str
     prompt: str
-    num_thumdnails: int
+    num_thumbnails: int
     headshot_url: str
     status: str
     thumbnails: list[ThumbnailResponse]
 
 
-@router.post("/upload-headshpt")
+@router.post("/upload-headshot")
 async def upload_headshot(file: UploadFile = File(...)):
     contents = await file.read()
     url = upload_file(
@@ -96,7 +96,7 @@ def get_job(job_id: str, session:Session = Depends(get_session)):
         variants = get_variants(t.imageKit_url) if t.imageKit_url else None
         thumb_response.append(
             ThumbnailResponse(
-                id= t.id,
+                thumbnail_id= t.id,
                 style_name= t.style_name,
                 status = t.status,
                 imageKit_url = t.imageKit_url,
@@ -108,7 +108,7 @@ def get_job(job_id: str, session:Session = Depends(get_session)):
     return JobResponse(
         id = job.id,
         prompt= job.prompt,
-        num_thumdnails= job.num_thumdnails,
+        num_thumbnails= job.num_thumbnails,
         headshot_url=job.headshot_url,
         status=job.status,
         thumbnails=thumb_response
@@ -125,7 +125,8 @@ async def stram_job(job_id:str):
             with Session(engine) as session:
                 job = session.get(Job, job_id)
                 if not job:
-                    yield f"event: error\ndata: {json.dumps({'error': "Job not found"})}"
+                    data = json.dumps({"error": "Job not found"})
+                    yield f"event: error\ndata: {data}\n\n"
                     return
                 thumbnails = session.exec(
                     select(Thumbnail).where(Thumbnail.job_id == job_id)
@@ -142,7 +143,7 @@ async def stram_job(job_id:str):
                             "imagekit_url": t.imageKit_url,
                             "variants": variants
                         })
-                        yield f"event: thumbnail_ready\n data: {data}"
+                        yield f"event: thumbnail_ready\ndata: {data}\n\n"
                         sent_thumbnails.add(t.id)
                     
                     elif t.status == "failed":
@@ -151,13 +152,13 @@ async def stram_job(job_id:str):
                             "style_name": t.style_name,
                             "error": t.error_message
                         })
-                        yield f"event: thumbnail_failed\n data: {data}"
+                        yield f"event: thumbnail_failed\ndata: {data}\n\n"
                         sent_thumbnails.add(t.id)
 
                 all_done = all(t.status in ("uploaded", "failed") for t in thumbnails)
                 if all_done and len(sent_thumbnails) == len(thumbnails):
                     data = json.dumps({"job_id": job_id, "status": job.status})
-                    yield f"event: job_completed\n data: {data}"
+                    yield f"event: job_completed\ndata: {data}\n\n"
                     return
             
             await asyncio.sleep(1.5)
@@ -169,6 +170,6 @@ async def stram_job(job_id:str):
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
-            "X-Accel-Biffering": "no",
+            "X-Accel-Buffering": "no",
         }
     )

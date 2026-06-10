@@ -7,7 +7,7 @@ from models import Job, Thumbnail
 from services.openai_service import generate_thumbnail
 from services.imagekit_service import upload_file
 
-logger = logging.getlogger(__name__)
+logger = logging.getLogger(__name__)
 
 STYLES = {
     "bold_dramatic": (
@@ -22,7 +22,7 @@ STYLES = {
         "whitespace, and sharp clean composition. The person should look "
         "approachable and professional"
     ),
-    "vibrant_energettic": (
+    "vibrant_energetic": (
         "Create a vibrant, emergetic YouTube thumbnail with colorfull gradients, "
         "dynamic angles, eye-catching pop-art style colors, and energetic "
         "composition, The person should have an excited or engaging expression ."
@@ -52,7 +52,7 @@ async def generate_single_thumbnail(thumbnail_id:str, prompt:str, headshot_url: 
         url = upload_file(
             file_bytes = image_byte,
             file_name=f"{thumbnail_id}.png",
-            folder_path=f"thumbnails/{job_id}/",
+            folder=f"thumbnails/{job_id}",
         )
 
             # DB Call save the url + mark uploaded
@@ -69,7 +69,7 @@ async def generate_single_thumbnail(thumbnail_id:str, prompt:str, headshot_url: 
         logger.error(f"Error generating thumbnail {thumbnail_id}: {e}")
         with Session(engine) as session:
             thumb = session.get(Thumbnail, thumbnail_id)
-            thumb.status = "error"
+            thumb.status = "failed"
             thumb.error_message = str(e)[:500]
             session.add(thumb)
             session.commit()

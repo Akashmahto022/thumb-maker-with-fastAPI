@@ -5,26 +5,26 @@ export async function uploadHeadshot(file){
         const form = new FormData();
         form.append("file", file)
 
-        const res = await fetch(`{API_BASE}/upload-headshot`, {
+        const res = await fetch(`${API_BASE}/upload-headshot`, {
             method: "POST",
             body: form 
         })
 
         if(!res.ok){
-            throw new Error("Filed to upload headshot")
+            throw new Error("Failed to upload headshot")
         }
 
         return res.json();
 
     } catch (error) {
-        throw new Error("Failed to get responce from AI")
+        throw new Error(error.message || "Failed to get response from AI", { cause: error })
     }
 }
 
 
-export async function createjob({prompt, numThumbnails, headshotUrl}){
+export async function createJob({prompt, numThumbnails, headshotUrl}){
     try {
-        const res = await fetch(`${API_BASE}/job`, {
+        const res = await fetch(`${API_BASE}/jobs`, {
             method: "POST",
             headers: {
                 "Content-Type" : "application/json",
@@ -42,25 +42,25 @@ export async function createjob({prompt, numThumbnails, headshotUrl}){
 
         return res.json();
     } catch (error) {
-        throw new Error("Failed to get responce from AI")
+        throw new Error(error.message || "Failed to get response from AI", { cause: error })
     }
 }
 
 
 
-export async function subscribeToJob(jobId, {onThumnailReady, onThumbnailFailed, onJobComplete, onError}){
+export function subscribeToJob(jobId, {onThumbnailReady, onThumbnailFailed, onJobComplete, onError}){
     try {
         const es = new EventSource(`${API_BASE}/jobs/${jobId}/stream`);
 
-        es.addEventListener("thumnail_ready", (event)=>{
-            onThumnailReady(JSON.parse(event.data));
+        es.addEventListener("thumbnail_ready", (event)=>{
+            onThumbnailReady(JSON.parse(event.data));
         })
 
-        es.addEventListener("thumnail_failed", (event)=>{
+        es.addEventListener("thumbnail_failed", (event)=>{
             onThumbnailFailed(JSON.parse(event.data));
         })
 
-        es.addEventListener("job_complete", (event)=>{
+        es.addEventListener("job_completed", (event)=>{
             onJobComplete(JSON.parse(event.data))
             es.close();
         })
@@ -73,6 +73,6 @@ export async function subscribeToJob(jobId, {onThumnailReady, onThumbnailFailed,
         return es;
 
     } catch (error) {
-        throw new Error("Failed to get responce from AI")
+        throw new Error(error.message || "Failed to get response from AI", { cause: error })
     }
 }
